@@ -196,7 +196,7 @@ strerror将错误码映射为一条对应的错误消息，perror会根据errno�
 
 ### 用户ID与组ID
 
-一个用户拥有一个唯一的标识，称为用户ID，一个用户可以属于多个组，每一个组有一个ID称为组ID。存放组ID与组名的文件是**/etc/group**，其中组ID为0表示root。存放用户ID与组ID对应关系的文件是**/etc/passwd**，对于root而言，用户ID和组ID均为0
+一个用户拥有一个唯一的标识，称为用户ID，一个用户可以属于多个组，每一个组有一个ID称为组ID。存放组ID与组名的文件是`/etc/group`，其中组ID为0表示root。存放用户ID与组ID对应关系的文件是`/etc/passwd`，对于root而言，用户ID和组ID均为0
 
 ### getuid与getgid函数
 
