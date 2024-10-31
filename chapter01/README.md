@@ -71,3 +71,19 @@ int fstat(int fd, struct stat *statbuf);
 
 [stat函数与fstat函数的基本使用](./src/stat_fstat.c)
 
+### opendir和readdir函数
+
+opendir打开一个目录，readdir可以读取目录中的每一项(entry)
+
+```c
+#include <sys/types.h>
+#include <dirent.h>
+DIR *opendir(const char *name);
+struct dirent *readdir(DIR *dirp);
+```
+
+[opendir函数和readdir函数的使用](./src/opendir_readdir.c)
+
+opendir函数内部内部会申请一块内存用于填充DIR结构，然后返回该DIR结构的地址，因此调用opendir函数后需要调用closedir释放申请的内存。readdir根据DIR结构读取目录中的每一项，DIR结构中可能存在一个结构current记录当前正在使用的目录项，current的初始值为第一个目录项，每调用一次readdir，current就进行一次迭代，readdir从current中获取正在访问的目录项属性，当current迭代完毕后，readdir返回NULL
+
+readdir函数的返回值为`struct dirent *`，使用后不需要释放，这个函数内部可能存在一个`static struct dirent entry`，每一次调用向该静态entry中填充值，并返回其地址
