@@ -44,7 +44,7 @@ int openat(int dirfd, const char *pathname, int flags, mode_t mode);
 
 open函数的参数`mode_t mode`仅当创建新文件时才发挥作用，此参数用来指定创建的新文件的权限，pathname参数是要打开或者创建文件的名称，flags参数用来表示函数调用的选项，使用`|`运算符可以指定多个选项
 
-> flags参数
+### flags参数
 
 flags参数的常用选项：
 
@@ -140,5 +140,52 @@ flags参数的常用选项：
 
 - `O_TRUNC`：如果文件存在，并且以`O_WRONLY`或`O_RDWR`方式打开，则将文件长度截断为0，即清空文件
 
+### 文件描述符的分配规则
 
+open或openat函数返回的文件描述符是最小且未使用的描述符数值，利用这一特点，可以重定向标准输入、标准输出和标准错误。例如，一个应用程序可以先关闭标准输出(1号文件描述符)，然后使用open打开一个文件，返回的文件描述符即为1，完成了将标准输出重定向到文件的功能
 
+[标准输出重定向](./src/STDOUT_FILENO_redirect.c)
+
+### openat函数
+
+openat函数基本功能与open函数类似
+
+```c
+int openat(int dirfd, const char *pathname, int flags, mode_t mode);
+```
+
+- 当参数pathname为绝对路径时，dirfd参数被忽略，此时openat函数功能与open函数完全一样
+
+- 当参数pathname为相对路径时，dirfd用来指明是"相对于哪一个目录"，当dirfd为`AT_FDCWD`时，表示相对于当前目录，dirfd为其它值时，表示相对于"指定目录"
+
+  [openat函数使用](./src/openat_usage.c)
+
+openat函数主要解决的问题：让线程可以使用相对路径名打开目录中的文件，而不是只能打开当前工作目录。同一个进程中的多个线程共享当前工作目录，比较难让同一个进程中的不同线程同一时间工作在不同的工作目录
+
+> TOCTTOU(Time Of Check To Time Of Use)
+
+TOCTTOU（Time Of Check To Time Of Use）是一种常见的计算机安全漏洞，特别是在文件系统操作中。它指的是在检查某个条件和实际使用该条件之间存在时间差，这段时间内系统状态可能会发生变化，从而导致安全问题。
+
+[TOCTTOU示例](./src/TOCTTOU.c)
+
+## creat函数
+
+```c
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+int creat(const char *pathname, mode_t mode);
+```
+
+creat函数等价于`open(pathname,O_WRONLY|O_CREAT|O_TRUNC,mode)`，creat函数的主要是为了弥补早期open函数的不足，早期UNIX系统下open函数不能打开一个不存在的文件，open函数也不能创建文件，不过后来open函数增加了`O_CREAT`选项，creat函数也就较少使用了，此外，creat函数创建文件是以只写方式打开的，灵活性不强
+
+[creat函数示例](./src/creat_use.c)
+
+## close函数
+
+```c
+#include <unistd.h>
+int close(int fd);
+```
+
+close函数用于关闭一个打开的文件，关闭一个文件时还会释放进程加在这个文件上的所有锁，当进程终止时，系统内核会自动关闭所有它打开的文件
