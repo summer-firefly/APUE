@@ -189,3 +189,23 @@ int close(int fd);
 ```
 
 close函数用于关闭一个打开的文件，关闭一个文件时还会释放进程加在这个文件上的所有锁，当进程终止时，系统内核会自动关闭所有它打开的文件
+
+## lseek函数
+
+每一个打开的文件都有一个与其相关的"当前文件偏移量(current file offset)"，通常是一个非负整数，对文件的读写操作都是从当前文件偏移量位置开始，进行读写时，偏移量也会随之变化。默认情况下，打开一个文件，偏移量被设置为0，如果指定了`O_APPEND`选项，则直接偏移到文件末尾，lseek函数可以显式的调整偏移量
+
+```c
+#include <sys/types.h>
+#include <unistd.h>
+off_t lseek(int fd, off_t offset, int whence);
+```
+
+参数offset与参数whence：
+
+- 若whence为`SEEK_SET`，表示将文件的偏移量设置为距文件开始处offset个字节
+- 若whence为`SEEK_CUR`，表示将文件偏移量设置为当前值加offset，offset可以为负数
+- 若whence为`SEEK_END`，表示将文件偏移量设置为文件长度加offset，offset可正可负
+
+lseek执行成功会返回新的文件偏移量
+
+[lseek使用示例](./src/lseek_use.c)
