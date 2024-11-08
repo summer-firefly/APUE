@@ -206,6 +206,11 @@ off_t lseek(int fd, off_t offset, int whence);
 - 若whence为`SEEK_CUR`，表示将文件偏移量设置为当前值加offset，offset可以为负数
 - 若whence为`SEEK_END`，表示将文件偏移量设置为文件长度加offset，offset可正可负
 
-lseek执行成功会返回新的文件偏移量
+lseek执行成功会返回新的文件偏移量。对于一些特殊文件，无法使用lseek设置偏移量，例如管道、FIFO和网络套接字，如果尝试使用lseek对这些文件设置偏移量，lseek会返回-1，并将errno设置为ESPIPE
 
 [lseek使用示例](./src/lseek_use.c)
+
+lseek仅将当前的文件偏移量记录在内核中，它不引起任何的I/O操作。文件偏移量可以大于文件的长度，在这种情况下，对该文件的下一次写入操作将加长该文件，并在文件中构成"空洞"，若尝试对"空洞"进行读取，则其值为0
+
+[演示"文件空洞"](./src/empty_hole_example.c)
+
