@@ -13,7 +13,7 @@ UNIX系统文件I/O主要关注下列问题：
 
 对于内核而言，所有打开的文件都通过文件描述符引用。文件描述符是一个非负整数，当打开一个文件或者创建一个新文件时，操作系统内核向进程返回一个文件描述符，读写文件时，将open或creat返回的文件描述符作为参数传递给read或write。
 
-UNIX系统下，每一个进程默认打开3个文件描述符，分别是0、1、2，对应标准输入、标准输出和标准错误，在头文件`<unistd.h>`中分别用`STDIN_FILENO`、`STDOUT_FILENO`和`STDERR_FILENO`表示：[打印默认文件描述符](./src/default_fd.c)
+UNIX系统下，每一个进程默认打开3个文件描述符，分别是0、1、2，对应标准输入、标准输出和标准错误，在头文件 `<unistd.h>`中分别用 `STDIN_FILENO`、`STDOUT_FILENO`和 `STDERR_FILENO`表示：[打印默认文件描述符](./src/default_fd.c)
 
 > 文件描述符的最大值
 
@@ -42,7 +42,7 @@ int openat(int dirfd, const char *pathname, int flags);
 int openat(int dirfd, const char *pathname, int flags, mode_t mode);
 ```
 
-open函数的参数`mode_t mode`仅当创建新文件时才发挥作用，此参数用来指定创建的新文件的权限，pathname参数是要打开或者创建文件的名称，flags参数用来表示函数调用的选项，使用`|`运算符可以指定多个选项
+open函数的参数 `mode_t mode`仅当创建新文件时才发挥作用，此参数用来指定创建的新文件的权限，pathname参数是要打开或者创建文件的名称，flags参数用来表示函数调用的选项，使用 `|`运算符可以指定多个选项
 
 ### flags参数
 
@@ -119,26 +119,18 @@ flags参数的常用选项：
 ```
 
 - `O_APPEND`：以写的方式打开文件时，每次写入都在文件末尾追加写入
-
 - `O_CREAT`：打开文件时，若文件不存在则创建，使用此选项时一般需要说明参数mode，表示需要创建的文件对应的权限
-
-- `O_EXCL`：一般与`O_CREAT`选项配合使用，若flags参数中同时包含`O_EXCL|O_CREAT`，那么在打开文件时文件不存在会创建文件并且open函数成功返回，若文件存在则出错返回。如果单独使用`O_CREAT`，文件存在时不会新建文件，而是直接返回(不出错)。`O_EXCL|O_CREAT`配合使用时如果成功返回表示之前文件一定不存在且此次调用一定新建了文件。`O_EXCL`使测试文件和创建文件成为一个**原子操作**
+- `O_EXCL`：一般与 `O_CREAT`选项配合使用，若flags参数中同时包含 `O_EXCL|O_CREAT`，那么在打开文件时文件不存在会创建文件并且open函数成功返回，若文件存在则出错返回。如果单独使用 `O_CREAT`，文件存在时不会新建文件，而是直接返回(不出错)。`O_EXCL|O_CREAT`配合使用时如果成功返回表示之前文件一定不存在且此次调用一定新建了文件。`O_EXCL`使测试文件和创建文件成为一个**原子操作**
 
   [O_EXCL|O_CREAT判断文件是否存在](./src/O_EXCL_test.c)
-
-- `O_NOCTTY`：此选项仅当参数path为终端设备时生效，如果pathname是一个终端设备，使用`O_NOCTTY`表示不将该设备分配作为进程的控制终端
-
+- `O_NOCTTY`：此选项仅当参数path为终端设备时生效，如果pathname是一个终端设备，使用 `O_NOCTTY`表示不将该设备分配作为进程的控制终端
 - `__O_NOFOLLOW`：此选项可以检查pathname是否是一个符号链接，如果是，则open函数出错返回
 
   [__O_NOFOLLOW检查符号链接](./src/__O_NOFOLLOW_test.c)
-
 - `O_NONBLOCK`：设置文件的I/O操作为非阻塞模式
-
-- `O_NDELAY`：设置I/O操作的模式为不延迟，与`O_NONBLOCK`的区别是`O_NONBLOCK`在没有数据可读时，将errno设置为`EAGAIN`或`EWOULDBLOCK`并返回-1，而`O_NDELAY`在没有数据可读时返回0，这与已经读到文件末尾的返回值0冲突，`O_NDELAY`具有二义性
-
+- `O_NDELAY`：设置I/O操作的模式为不延迟，与 `O_NONBLOCK`的区别是 `O_NONBLOCK`在没有数据可读时，将errno设置为 `EAGAIN`或 `EWOULDBLOCK`并返回-1，而 `O_NDELAY`在没有数据可读时返回0，这与已经读到文件末尾的返回值0冲突，`O_NDELAY`具有二义性
 - `O_SYNC`：使每一次write操作等待物理I/O操作完成，包括由该write操作引起的文件属性更新所需的I/O
-
-- `O_TRUNC`：如果文件存在，并且以`O_WRONLY`或`O_RDWR`方式打开，则将文件长度截断为0，即清空文件
+- `O_TRUNC`：如果文件存在，并且以 `O_WRONLY`或 `O_RDWR`方式打开，则将文件长度截断为0，即清空文件
 
 ### 文件描述符的分配规则
 
@@ -155,8 +147,7 @@ int openat(int dirfd, const char *pathname, int flags, mode_t mode);
 ```
 
 - 当参数pathname为绝对路径时，dirfd参数被忽略，此时openat函数功能与open函数完全一样
-
-- 当参数pathname为相对路径时，dirfd用来指明是"相对于哪一个目录"，当dirfd为`AT_FDCWD`时，表示相对于当前目录，dirfd为其它值时，表示相对于"指定目录"
+- 当参数pathname为相对路径时，dirfd用来指明是"相对于哪一个目录"，当dirfd为 `AT_FDCWD`时，表示相对于当前目录，dirfd为其它值时，表示相对于"指定目录"
 
   [openat函数使用](./src/openat_usage.c)
 
@@ -177,7 +168,7 @@ TOCTTOU（Time Of Check To Time Of Use）是一种常见的计算机安全漏洞
 int creat(const char *pathname, mode_t mode);
 ```
 
-creat函数等价于`open(pathname,O_WRONLY|O_CREAT|O_TRUNC,mode)`，creat函数的主要是为了弥补早期open函数的不足，早期UNIX系统下open函数不能打开一个不存在的文件，open函数也不能创建文件，不过后来open函数增加了`O_CREAT`选项，creat函数也就较少使用了，此外，creat函数创建文件是以只写方式打开的，灵活性不强
+creat函数等价于 `open(pathname,O_WRONLY|O_CREAT|O_TRUNC,mode)`，creat函数的主要是为了弥补早期open函数的不足，早期UNIX系统下open函数不能打开一个不存在的文件，open函数也不能创建文件，不过后来open函数增加了 `O_CREAT`选项，creat函数也就较少使用了，此外，creat函数创建文件是以只写方式打开的，灵活性不强
 
 [creat函数示例](./src/creat_use.c)
 
@@ -192,7 +183,7 @@ close函数用于关闭一个打开的文件，关闭一个文件时还会释放
 
 ## lseek函数
 
-每一个打开的文件都有一个与其相关的"当前文件偏移量(current file offset)"，通常是一个非负整数，对文件的读写操作都是从当前文件偏移量位置开始，进行读写时，偏移量也会随之变化。默认情况下，打开一个文件，偏移量被设置为0，如果指定了`O_APPEND`选项，则直接偏移到文件末尾，lseek函数可以显式的调整偏移量
+每一个打开的文件都有一个与其相关的"当前文件偏移量(current file offset)"，通常是一个非负整数，对文件的读写操作都是从当前文件偏移量位置开始，进行读写时，偏移量也会随之变化。默认情况下，打开一个文件，偏移量被设置为0，如果指定了 `O_APPEND`选项，则直接偏移到文件末尾，lseek函数可以显式的调整偏移量
 
 ```c
 #include <sys/types.h>
@@ -202,9 +193,9 @@ off_t lseek(int fd, off_t offset, int whence);
 
 参数offset与参数whence：
 
-- 若whence为`SEEK_SET`，表示将文件的偏移量设置为距文件开始处offset个字节
-- 若whence为`SEEK_CUR`，表示将文件偏移量设置为当前值加offset，offset可以为负数
-- 若whence为`SEEK_END`，表示将文件偏移量设置为文件长度加offset，offset可正可负
+- 若whence为 `SEEK_SET`，表示将文件的偏移量设置为距文件开始处offset个字节
+- 若whence为 `SEEK_CUR`，表示将文件偏移量设置为当前值加offset，offset可以为负数
+- 若whence为 `SEEK_END`，表示将文件偏移量设置为文件长度加offset，offset可正可负
 
 lseek执行成功会返回新的文件偏移量。对于一些特殊文件，无法使用lseek设置偏移量，例如管道、FIFO和网络套接字，如果尝试使用lseek对这些文件设置偏移量，lseek会返回-1，并将errno设置为ESPIPE
 
@@ -212,7 +203,7 @@ lseek执行成功会返回新的文件偏移量。对于一些特殊文件，无
 
 lseek仅将当前的文件偏移量记录在内核中，它不引起任何的I/O操作。文件偏移量可以大于文件的长度，在这种情况下，对该文件的下一次写入操作将加长该文件，并在文件中构成"空洞"，若尝试对"空洞"进行读取，则其值为0
 
-[演示"文件空洞"](./src/empty_hole_example.c)
+[演示&#34;文件空洞&#34;](./src/empty_hole_example.c)
 
 ## read函数
 
@@ -227,7 +218,7 @@ ssize_t read(int fd, void *buf, size_t count);
 
 read函数使用时的注意事项：
 
-- read函数的最后一个参数是期望读取到的字节数count，返回值是实际读取到的字节数realcount，realcount<=count，read函数会将内核空间的数据拷贝到用户空间，并且不会添加`\0`，用户如果想要以C语言的形式解释字符串，需要手动添加`\0`。read函数在读取到文件末尾时，会返回0
+- read函数的最后一个参数是期望读取到的字节数count，返回值是实际读取到的字节数realcount，realcount<=count，read函数会将内核空间的数据拷贝到用户空间，并且不会添加 `\0`，用户如果想要以C语言的形式解释字符串，需要手动添加 `\0`。read函数在读取到文件末尾时，会返回0
 - read函数从终端设备读取数据时，通常一次最多读取一行，并且会将回车键(`'\n'`)也进行读取，参考[read函数示例](./src/test_read.c)
 - read函数从网络中读取数据时，由于缓冲机制可能造成返回值小于所需要读取的字节数
 - read函数从管道或FIFO读取数据时，若管道包含的字节数小于所需的数量，read将返回实际可用的字节数
@@ -243,17 +234,17 @@ write函数用于向文件中写入数据
 ssize_t write(int fd, const void *buf, size_t count);
 ```
 
-write函数的返回值通常与参数count相同，否则表示出错，write函数常见的一个出错原因是磁盘已经写满。对于普通文件，写操作从文件当前偏移量处开始，如果在打开该文件时指定了`O_APPEND`选项，那么在每一次写操作之前，会将文件偏移量设置在文件当前结尾位置，写操作成功之后，文件偏移量增加实际写入的字节数
+write函数的返回值通常与参数count相同，否则表示出错，write函数常见的一个出错原因是磁盘已经写满。对于普通文件，写操作从文件当前偏移量处开始，如果在打开该文件时指定了 `O_APPEND`选项，那么在每一次写操作之前，会将文件偏移量设置在文件当前结尾位置，写操作成功之后，文件偏移量增加实际写入的字节数
 
 [write函数示例](./src/write_usage.c)
 
 ## I/O的效率
 
-程序[testIO](./src/test_io.c)利用read和write函数，从标准输入读取数据，并将其输出到标准输出，该程序中不同BUFFER_SIZE(缓冲区)对I/O的效率影响较大，假设运行该程序时将标准输入重定向到一个大小为516581760字节的文件，将标准输出重定向到`/dev/null`，下面是在不同缓冲区下程序运行所花费的时间表：
+程序[testIO](./src/test_io.c)利用read和write函数，从标准输入读取数据，并将其输出到标准输出，该程序中不同BUFFER_SIZE(缓冲区)对I/O的效率影响较大，假设运行该程序时将标准输入重定向到一个大小为516581760字节的文件，将标准输出重定向到 `/dev/null`，下面是在不同缓冲区下程序运行所花费的时间表：
 
 ![test_result.png](./png/test_result.png)
 
-可以看出系统CPU时间的最小值差不多出现在缓冲区大小为4096附近，这里只需要知道，缓冲区的大小会影响IO的效率，程序实际进行IO时，最好将将缓冲区的大小设置为磁盘块的大小(一般是4096)，这样可以较大程度提高IO的效率。可以使用命令`stat -f /`查看磁盘块的大小
+可以看出系统CPU时间的最小值差不多出现在缓冲区大小为4096附近，这里只需要知道，缓冲区的大小会影响IO的效率，程序实际进行IO时，最好将将缓冲区的大小设置为磁盘块的大小(一般是4096)，这样可以较大程度提高IO的效率。可以使用命令 `stat -f /`查看磁盘块的大小
 
 ## 文件共享
 
@@ -303,5 +294,44 @@ v-node与文件是一一对应的，每一个打开的文件在内核中只有�
 
 ## 原子操作
 
+以一个典型的场景介绍原子操作的概念：向文件中追加数据
 
+向文件中追加数据可以使用open函数的O_APPEND选项，但是早期的UNIX系统中open函数不支持O_APPEND选项，向文件中追加内容的方法是打开文件后通过lseek调整文件指针偏移到文件末尾，然后调用read函数写入内容。
+
+[示例](./src/append_test.c)
+
+对于单个进程，示例中的代码没有问题，程序能够正常工作，但是如果存在多个进程同时使用此方法将数据追加到同一个文件，可能出现数据一致性的问题。
+
+假设有2个独立的进程A和B，A和B对同一个文件进行追加写操作，文件的原始大小为1500。每一个进程都打开了该文件但是未使用O_APPEND选项，此时进程A和B的文件表项指向同一个v-node，假设A调用了lseek将偏移量设置到文件尾端，然后内核切换进程，进程B运行，进程B执行lseek，也将偏移量设置到文件尾端。然后B调用write向文件尾端追加100字节，由于文件长度已经增加，所以内核将v-node中当前文件长度更新为1600，然后内核切换到进程A，当A调用write时，会从偏移量1500开始写入，从而覆盖了进程B写入的数据。导致数据一致性出现问题
+
+产生这种现象的主要原因是open-lseek-write不是一步完成，它们不是原子操作。
+
+> pread与pwrite函数
+
+```c
+#include <unistd.h>
+ssize_t pread(int fd, void *buf, size_t count, off_t offset);
+ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
+```
+
+- 调用pread函数相当于调用lseek后调用read，pread函数将定位与读合并为一个操作，调用pread无法中断定位和读操作
+- pread不更新文件表项中的文件偏移量
+- 调用pwrite函数相当于调用lseek后调用write，pwrite函数将定位与写合并为一个操作，调用pwrite无法中断定位和写操作
+- pwrite不更新文件表项中的文件偏移量
+
+[使用pwrite从偏移量为n的位置写入内容](./src/pwrite_usage.c)
+
+[使用pread从偏移量为n的位置读取内容](./src/pread_usage.c)
+
+> 创建一个文件
+
+open函数有一个选项O_EXCL，使用open函数打开文件时，如果指定O_CREAT和O_EXCL，那么文件存在时，open函数失败返回，使用O_CREAT和O_EXCL选项时，检查文件是否存在和创建文件这2个操作是作为一个原子操作执行的，如果没有这样一个原子操作，则检查文件是否存在和创建文件需要经过多步：
+
+1. open打开文件
+2. 如果失败，creat创建文件
+3. 如果成功，write/read读写文件
+
+这样做存在的问题是：若open失败并且还没有执行到creat时，存在另外一个进程创建了该文件并且写入数据，然后原进程执行creat之前文件已经存在，这显然不是期望的结果。如果open打开文件与creat创建文件是一个原子操作，那么就不会出现这个问题
+
+一般而言，原子操作(atomic operation)指的是由多步组成的一个操作，如果该操作原子执行，则要么执行完毕所有步骤，要么一步也不执行，不可能只执行所有步骤中的一个子集
 
