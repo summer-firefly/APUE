@@ -335,3 +335,31 @@ open函数有一个选项O_EXCL，使用open函数打开文件时，如果指定
 
 一般而言，原子操作(atomic operation)指的是由多步组成的一个操作，如果该操作原子执行，则要么执行完毕所有步骤，要么一步也不执行，不可能只执行所有步骤中的一个子集
 
+## dup和dup2函数
+
+```c
+#include <unistd.h>
+int dup(int oldfd);
+int dup2(int oldfd, int newfd);
+```
+
+dup函数用于复制一个文件描述符，图示：
+
+![dup](./png/dup.png)
+
+进程默认打开了0、1、2这3个文件描述符，调用`dup(1)`后系统内核会选择一个最小且未被使用的文件描述符(在图示中是3)，让其文件指针指向和1号文件描述符相同的文件表项，并返回这个复制的文件描述符。
+
+dup函数的特点：dup函数返回的文件描述符和传入的文件描述符参数共享同一个文件表项
+
+[dup函数示例](./src/dup_usage.c)
+
+dup2函数可以将newfd指向的文件表项切换为oldfd指向的文件表项，如果newfd当前还未使用，则系统将newfd设置为使用状态，并将其文件指针指向oldfd的文件表项。利用dup2函数可以实现重定向功能
+
+[dup2函数示例](./src/dup2_usage.c)
+
+使用fcntl函数也可以复制文件描述符。dup(fd)等效于fcntl(fd,F_DUPFD,0)，而dup2(fd,fd2)等效于close(fd2);fcntl(fd,F_DUPFD,fd2)。不过dup2是一个原子操作，而close-->fcntl不是原子操作，有可能在close和fcntl之间调用了信号捕获函数，在信号捕获函数内修改了文件描述符，同时如果是在多线程环境下改变了文件描述符也有可能出现问题
+
+
+
+
+
