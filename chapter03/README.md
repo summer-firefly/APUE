@@ -359,7 +359,20 @@ dup2函数可以将newfd指向的文件表项切换为oldfd指向的文件表项
 
 使用fcntl函数也可以复制文件描述符。dup(fd)等效于fcntl(fd,F_DUPFD,0)，而dup2(fd,fd2)等效于close(fd2);fcntl(fd,F_DUPFD,fd2)。不过dup2是一个原子操作，而close-->fcntl不是原子操作，有可能在close和fcntl之间调用了信号捕获函数，在信号捕获函数内修改了文件描述符，同时如果是在多线程环境下改变了文件描述符也有可能出现问题
 
+## sync、fsync、fdatasync
 
+传统的UNIX系统实现在内核中设有缓冲区高速缓存或页高速缓存，大多数磁盘I/O都通过缓冲区进行，当我们向文件中写数据时，内核会先将数据复制到缓冲区，然后排入队列，并在合适的时机写入磁盘，这种方式称为延迟写(delayed write)。通常当内核需要重用缓冲区来存放其它磁盘块数据时，它会把所有延迟写数据块写入磁盘。为了保证磁盘上实际文件系统与缓冲区中内容的一致性，UNIX系统提供了sync、fsync和fdatasync这3个函数。
 
+```c
+#include <unistd.h>
+void sync(void);
+int fsync(int fd);
+int fdatasync(int fd);
+```
 
+- sync将所有修改过的块缓冲区排入写入队列，然后返回，sync不等待实际写磁盘操作结束。一般系统守护进程update会周期性的调用sync函数，保证定时flush内核缓冲区，sync(1)也调用sync函数
+- fsync函数只对文件描述符fd指定的一个文件起作用，并且等待写磁盘操作结束返回
+- fdatasync函数类似于fsync，但是fdatasync函数只影响文件的数据部分，fsync函数除了影响文件的数据部分还会同步文件的属性
+
+[演示fsync](./src/fsync_usage.c)
 
