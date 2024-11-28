@@ -503,9 +503,80 @@ cat test.txt
 
 程序运行时，如果设置O_SYNC标志会增加系统时间和时钟时间，因为每一次write都会等待数据实际写盘在返回，磁盘I/O通常效率不高。此外需要注意，在[案例2](./src/fcntl2.c)中给STDOUT_FILENO设置O_SYNC标志可能是不成功的(从输出信息中可以看出这一点)，不过fcntl依然会正常返回，不会出错
 
-## iocntl
+## ioctl
 
+ioctl函数常用于终端IO
 
+```c
+#include <sys/ioctl.h>
+int ioctl(int fd, unsigned long request, ...);
+```
 
+ioctl函数允许用户空间程序向内核空间发送命令，控制硬件设备或获取设备的状态，ioctl函数直接和驱动程序交互，错误的使用可能导致系统不稳定
 
+## /proc/$(pid)/fd
 
+/proc/$(pid)/fd可以查看一个进程打开了哪些文件描述符，其中pid表示进程的id
+
+```bash
+ls /proc/$$/fd -l # $$表示终端进程的pid
+total 0
+lrwx------ 1 ubuntu ubuntu 64 Nov 28 08:30 0 -> /dev/pts/1
+lrwx------ 1 ubuntu ubuntu 64 Nov 28 08:30 1 -> /dev/pts/1
+lrwx------ 1 ubuntu ubuntu 64 Nov 28 08:30 2 -> /dev/pts/1
+lrwx------ 1 ubuntu ubuntu 64 Nov 28 08:30 255 -> /dev/pts/1
+```
+
+## Exercise
+
+1.写一个与dup2函数功能相同的函数，不能直接调用fcntl函数。[answer](./src/exercise1.c)
+
+2.假设一个进程执行下面3个系统调用：
+
+```c
+fd1 = open(path,oflags);
+fd2 = dup(fd1);
+fd3 = open(path,oflags);
+```
+
+对fcntl作用于fd1来说，F_SETFD命令会影响哪一个文件描述符?F_SETFL呢?
+
+fd1与fd2共用文件表项，fd3是一个新打开的文件描述符，单独使用一个文件表项，F_SETFD只会影响到fd1的文件描述符标志，F_SETFL则会影响到fd1对应的文件表项中的文件状态标志，由于fd2也使用这一个文件表项，因此fd2的文件状态标志会受到影响。
+
+区分文件描述符标志和文件状态标志：
+
+- 文件描述符标志属于进程表项中的数据，而文件状态标志属于文件表项中的数据
+- 多个文件描述符可以使用同一个文件表项，通过dup和dup2可以做到这一点，若多个文件描述符使用同一个文件表项，则它们共用同一套文件状态标志，因为文件状态标志是文件表项中的内容
+- open函数会新建文件表项
+- fcntl函数的F_SETFD/F_GETFD的功能是设置/获取文件描述符标志，F_SETFL/F_GETFL的功能是设置/获取文件表项中的文件状态标志
+
+3.许多程序都包含下面一段代码，功能是什么？
+
+```c
+dup2(fd,0);
+dup2(fd,1);
+dup2(fd,2);
+```
+
+将文件描述符0，1，2的文件指针都指向fd的文件表项，达到重定向的效果，这样printf、fprintf、scanf的操作对象都变为fd对应的文件
+
+4.在Bash中，digit1>&digit2表示要将描述符digit1重定向至digit2的同一文件，说明下面这2条命令的区别
+
+```bash
+./a.out > outfile 2>&1
+./a.out 2>&1 > outfile
+```
+
+在Shell中，命令的处理是从左往右的，`./a.out > outfile 2>&1`先将1号文件描述符进行重定向，然后再将2号文件描述符重定向到1上，此时2和1指向同一个文件表项，图示：
+
+![./a.out > outfile 2>&1](./png/g1.png)
+
+`./a.out 2>&1 > outfile`，先将2号文件描述符的文件表项修改为1号的文件表项，然后将1号文件描述符的文件表项进行修改，图示如下：
+
+![./a.out 2>&1 > outfile](./png/g2.png)
+
+4.如果使用追加标志打开一个文件以便读写，能否依然用lseek在任意位置开始读，能否用lseek更新文件中的任一部分数据？
+
+[验证](./src/exercise_4.c)
+
+运行./a.out，结论是依然可以使用lseek在任意位置开始读，但是使用lseek将文件指针调整到文件头后调用write发现依然是追加写
