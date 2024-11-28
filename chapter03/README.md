@@ -376,3 +376,136 @@ int fdatasync(int fd);
 
 [演示fsync](./src/fsync_usage.c)
 
+## fcntl
+
+fcntl函数可以改变已经被打开的文件的属性
+
+```c
+#include <unistd.h>
+#include <fcntl.h>
+int fcntl(int fd, int cmd, ... /* arg */ );
+```
+
+fcntl函数共有5个功能：
+
+1. 复制一个已有的文件描述符（cmd=`F_DUPFD`或`F_DUPFD_CLOEXEC`）
+2. 获取/设置文件描述符标志（cmd=`F_GETFD`或`F_SETFD`）
+3. 获取/设置文件状态标志（cmd=`F_GETFL`或`F_SETFL`）
+4. 获取/设置异步I/O所有权（cmd=`F_GETOWN`或`F_SETOWN`）
+5. 获取/设置记录锁（cmd=`F_GETLK`、`F_SETLK`、`F_SETLKW`）
+
+> F_DUPFD
+
+复制文件描述符fd，新文件描述符作为函数的返回值返回。复制的文件描述符与fd共用文件表项。fcntl函数使用F_DUPFD标志时，需要指定arg参数，否则以出错的方式返回-1。arg参数示例：
+
+- 0，fcntl函数会从大于等于0的fd中找一个最小且未使用的fd复制原来的fd并返回
+- 7，8，9，如果7号fd未使用，则返回7，否则检查8号fd，最后检查9号fd，如果都已经被使用，则从10号开始往后遍历找到一个最小且未使用的fd
+
+fcntl(fd,F_DUPFD,...)返回的新描述符和fd共用同一文件表项，但是新描述符有它自己的一套文件描述符标志，其中FD_CLOEXEC文件描述符标志被清除，这表示该描述符在exec时依然保持有效
+
+[fcntl的F_DUPFD选项](./src/fcntl_F_DUPFD.c)
+
+> F_DUPFD_CLOEXEC
+
+复制文件描述符，设置与新描述符关联的FD_CLOEXEC文件描述符标志，返回新文件描述符
+
+> F_GETFD
+
+获取fd的文件描述符标志
+
+> F_SETFD
+
+设置fd的文件描述符标志，新标志值按照第三个参数设置
+
+> F_GETFL
+
+获取文件描述符的文件状态标志
+
+| 文件状态标志 | 说明                   |
+| ------------ | ---------------------- |
+| O_RDONLY     | 只读打开               |
+| O_WRONLY     | 只写打开               |
+| O_RDWR       | 读、写打开             |
+| O_EXEC       | 只执行打开             |
+| O_SEARCH     | 只搜索打开目录         |
+| O_APPEND     | 追加写                 |
+| O_NONBLOCK   | 非阻塞模式             |
+| O_SYNC       | 等待写完成(数据和属性) |
+| O_DSYNC      | 等待写完成(仅数据)     |
+| O_RSYNC      | 同步读和写             |
+| O_FSYNC      | 等待写完成             |
+| O_ASYNC      | 异步I/O                |
+
+文件状态标志中有5个标志是访问方式标志，分别是O_RDONLY、O_WRONLY、O_RDWR、O_EXEC、O_SEARCH（有的Linux发行版可能不支持O_EXEC和O_SEARCH），这5个值互斥，只能取其中一个，如果想要通过fcntl获取文件的访问方式标志，需要使用屏蔽字O_ACCMODE
+
+[F_GETFL获取文件状态标志](./src/fcntl_F_GETFL.c)
+
+> F_SETFL
+
+设置文件状态标志，将文件状态标志设置为第3个参数的值，可以设置的几个标志是：
+
+- O_APPEND
+- O_NONBLOCK
+- O_SYNC
+- O_DSYNC
+- O_RSYNC
+- O_FSYNC
+- O_ASYNC
+
+F_SETFL不能修改文件描述符的访问模式，一旦文件被打开，其访问模式（如`O_RDONLY`, `O_WRONLY`, `O_RDWR`）是固定的，不能通过`fcntl`来更改。`fcntl`可以用来更改文件状态标志（如非阻塞模式、追加模式等），但不能更改访问模式。
+
+> F_GETOWN
+
+获取当前接收SIGIO和SIGURG信号的进程ID或进程组ID，SIGIO和SIGURG信号属于异步I/O信号
+
+> F_SETOWN
+
+设置接收SIGIO和SIGURG信号的进程ID或进程组ID，如果arg参数为正数，表示指定一个进程ID，如果arg参数为负数，表示指定一个进程组ID，这个进程组ID为arg的绝对值
+
+> fcntl函数的返回值
+
+fcntl函数的返回值与使用的选项有关，如果fcntl调用出错，所有命令都返回-1，如果成功则返回其它值。对于F_DUPFD、F_GETFD、F_GETFL、F_GETOWN选项，fcntl的返回值则有些不同。
+
+- F_DUPFD：返回新的文件描述符
+- F_GETFD与F_GETFL：返回对应的标志
+- F_GETOWN：返回正的进程ID或负的进程组ID
+
+fcntl函数典型案例：
+
+[案例1](./src/fcntl1.c)：使用不同的命令行参数运行结果如下
+
+```bash
+./a.out 0 < /dev/tty
+文件的访问模式为只读
+---------------------------
+./a.out 1 > test.txt
+cat test.txt
+文件的访问模式为只写
+---------------------------
+./a.out 2 2>>test.txt
+文件的访问模式为只写
+文件描述符APPEND标志被打开
+---------------------------
+./a.out 5 5<>test.txt
+文件的访问模式为读写
+```
+
+说明：
+
+1. `./a.out 0 < /dev/tty`，argv[1]="0"，`<`表示将标准输入重定向到/dev/tty，以O_RDONLY的方式打开/dev/tty，0号文件描述符的文件表项对应的v-node是/dev/tty的v-node
+2. `./a.out 1 > test.txt`，argv[1]="1"，`>`表示将标准输出重定向到test.txt，以O_WRONLY的方式打开test.txt，1号文件描述符的文件表项对应的v-node是test.txt的v-node
+3. `./a.out 2 2>>test.txt`，argv[1]="2"，`2>>`表示将标准错误追加重定向到test.txt，以`O_WRONLY|O_APPEND`的方式打开test.txt，2号文件描述符的文件表项对应的v-node是test.txt的v-node
+4. `./a.out 5 5<>test.txt`，argv[1]="5"，`5<>test.txt`表示在5号文件描述符上打开test.txt，打开方式为`O_RDWR`
+
+[案例2](./src/fcntl2.c)：在修改文件描述符标志或文件状态标志时必须谨慎，要先获取当前的标志值，然后按照期望修改它，最后设置新标志，不能只是执行`F_SETFD`或`F_SETFL`命令，这样会关闭以前设置的标志位。
+
+程序中`val|=flag`表示设置文件描述符标志，`val&=~flag`表示取消设置文件描述符标志。程序中`set_fd_flag(STDOUT_FILENO, O_SYNC)`表示开启标准输出的同步写标志，这样每一次write操作都要等待数据已经写入到磁盘后在返回。在UNIX系统中，通常write只是将数据排入队列，而实际的写操作则可能在以后某个时刻进行，对于数据库系统需要使用O_SYNC，这样一来，当它从write返回时就知道数据一定已经写入到磁盘，避免数据丢失。
+
+程序运行时，如果设置O_SYNC标志会增加系统时间和时钟时间，因为每一次write都会等待数据实际写盘在返回，磁盘I/O通常效率不高。此外需要注意，在[案例2](./src/fcntl2.c)中给STDOUT_FILENO设置O_SYNC标志可能是不成功的(从输出信息中可以看出这一点)，不过fcntl依然会正常返回，不会出错
+
+## iocntl
+
+
+
+
+
