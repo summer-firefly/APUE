@@ -48,3 +48,67 @@ struct stat {
 
 演示stat、fstat、fstatat、lstat函数的使用：[usage for stat、fstat、fstatat、lstat](./src/usage_example.c)
 
+## 文件类型
+
+UNIX系统下常见的文件类型：
+
+> 普通文件
+
+regular file，普通文件中包含了某种形式的数据，至于这种数据是文本还是二进制，对于UNIX内核而言并未区别，对普通文件内容的解释由处理该文件的应用程序进行，例如.py文件由Python解释器执行，一个值得注意的例外是二进制可执行文件，UNIX系统下所有的二进制可执行文件都遵循一种标准化的格式，这种格式使内核能够确定程序文本和数据的加载位置，UNIX系统下常见可执行文件的格式为ELF
+
+```bash
+file $(which ls)
+/bin/ls: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 3.2.0, BuildID[sha1]=9567f9a28e66f4d7ec4baf31cfbf68d0410f0ae6, stripped
+```
+
+> 目录文件
+
+directory file，目录包含了目录下每一项的名字和指向这些项有关信息的指针，对于一个目录文件具有读权限的任一进程可以读取该目录下的内容，但只有内核才能对目录进行写入
+
+```c
+DIR* dir = opendir("/usr/include");
+struct diren* entry = NULL;
+while(entry=readdir(dir)){
+    //...
+}
+```
+
+> 块特殊文件
+
+block special file，这种类型的文件提供对设备**带缓冲**的访问，每次访问以固定长度为单位进行
+
+```bash
+ls /dev/sda -l
+brw-rw---- 1 root disk 8, 0 May  4  2024 /dev/sda
+```
+
+> 字符特殊文件
+
+character special file，提供对设备**不带缓冲**的访问，每次访问长度可变，系统中的所有设备要么是字符特殊文件，要么是块特殊文件
+
+> FIFO
+
+也称命名管道，first in first out，主要用于进程间通信
+
+> socket
+
+用于网络通信
+
+> 符号链接
+
+符号链接指向另一个文件
+
+可以通过struct stat结构中的st_mode成员判断文件类型，通过调用宏函数完成
+
+| 宏         | 文件类型     |
+| ---------- | ------------ |
+| S_ISREG()  | 普通文件     |
+| S_ISDIR()  | 目录文件     |
+| S_ISCHR()  | 字符特殊文件 |
+| S_ISBLK()  | 块特殊文件   |
+| S_ISFIFO() | 管道或FIFO   |
+| S_ISLNK()  | 符号链接     |
+| S_ISSOCK() | 套接字       |
+
+[使用st_mode判断文件类型](./src/st_mode.c)
+
