@@ -112,3 +112,60 @@ character special file，提供对设备**不带缓冲**的访问，每次访问
 
 [使用st_mode判断文件类型](./src/st_mode.c)
 
+## 文件的访问权限
+
+文件的访问权限被分为可读(r)、可写(w)、可执行(x)，需要注意的是，这里提到的文件是指广义上的文件(包括普通文件、目录、字符设备、块设备)，而不是单指普通文件。通过`ls -l`可以查看文件的访问权限
+
+```bash
+ls -l /usr/include/stdio.h
+-rw-r--r-- 1 root root 34649 Aug  8 14:47 /usr/include/stdio.h
+```
+
+如果想要修改文件的权限，可以使用chmod命令，例如
+
+```bash
+chmod u+x test.txt # 给文件的所有者添加可执行权限
+chmod g+r test.txt # 给文件的所属组添加可读权限
+chmod o+w test.txt # 给文件的other添加可写权限
+```
+
+文件访问权限的含义：
+
+**r**：读权限，对于文件而言，有r权限表示可以查看文件中的内容，对于目录而言，有r权限可以查看目录中的每一项
+
+**w**：写权限，对于文件而言，有w权限表示可以修改文件中的内容，对于目录而言，有w权限表示可以在目录下新建文件或删除文件
+
+**x**：可执行权限，对于文件而言，有x权限表示文件可执行，对于目录而言，有x权限表示可以通过cd进入目录
+
+[测试文件的访问权限](./src/permission_test.c)
+
+## 函数access和函数faccessat
+
+函数access用于测试文件的权限以及文件是否存在
+
+```c
+#include <unistd.h>
+int access(const char *pathname, int mode);
+```
+
+| mode | 说明                         |
+| ---- | ---------------------------- |
+| F_OK | 测试文件是否存在             |
+| R_OK | 测试是否具备对文件的读权限   |
+| W_OK | 测试是否具备对文件的写权限   |
+| X_OK | 测试是否具备对文件的执行权限 |
+
+[函数access的使用](./src/access_usage.c)
+
+faccessat与access功能基本一致
+
+```c
+#include <fcntl.h>           /* Definition of AT_* constants */
+#include <unistd.h>
+int faccessat(int dirfd, const char *pathname, int mode, int flags);
+```
+
+当pathname为绝对路径时，dirfd被忽略，当pathname为相对路径时，如果dirfd为AT_FDCWD，表示相对于当前路径，否则表示相对于指定路径，最后一个参数flags通常被设置为0
+
+[函数faccessat的使用](./src/faccessat_usage.c)
+
